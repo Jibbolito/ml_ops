@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pkl
+*.joblib
+
+# Logs
+logs/
+
+# Datasets
+Data/
+
+# Model versions (only keep code)
+Model/Model/
+Model/versions/
+
+# IDE
+.idea/
+*.iml

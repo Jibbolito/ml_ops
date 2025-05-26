@@ -160,3 +160,57 @@ If any of these issues are found, the prediction step fails early and logs a det
 model from silently producing unreliable outputs and helps surface potential data drift or pipeline misconfigurations 
  during deployment. These checks are executed via `robustness_check.py` and integrated into the testing workflow. Each robustness check is logged separately in `logs/robustness_log_<timestamp>.txt`. This isolates critical robustness test failures from standard data validation logs and supports detailed debugging when inference reliability is at risk.
 
+# Task 3 - Post-deployment Monitoring & Drift Detection
+## Part 1 - Drift Detection using Jensen-Shannon Divergence
+To monitor for data drift after deployment, we implemented a dedicated monitoring flow (`monitor_drift.py`) that analyzes 
+changes in the distribution of the Income feature between training and unseen data.
+
+We chose Jensen-Shannon divergence (JS divergence) as our drift metric because it:
+- Is symmetric and interpretable (bounded between 0 and 1)
+- Does not require matching sample sizes
+- Is more interpretable, since a value near 0 means “very similar distributions” and near 1 means “very different”
+- Is designed to compare probability distributions, not raw counts
+
+
+Expected Behavior:
+We use the cleaned and validated segment `train_data.csv` as our reference distribution and `unseen_segment.csv` as incoming 
+(unseen) data. A JS divergence value below 0.05 is considered stable, while higher values indicate possible drift.
+
+### Logging
+Each drift monitoring run automatically writes its results to a timestamped log file under logs/.
+The log contains the divergence value and a success or warning message with emoji indicators for easier interpretation. Emojis are kept 
+in the log file, and automatically filtered from console output to avoid encoding issues on Windows terminals.
+
+## Part 2 - Offline A/B Testing of Model Variants
+To evaluate the performance of different model configurations before deployment, a deterministic and reproducible 
+offline A/B test setup was implemented. This helps compare model behavior on the same target population using a clean and
+controlled evaluation method.
+
+### Strategy
+We trained two versions of the model with different hyperparameters:
+- `model_a`: `RandomForestClassifier(n_estimators=100, max_depth=10)`
+- `model_b`: `RandomForestClassifier(n_estimators=150, max_depth=15)`
+
+Both models were trained using the same `train_data.csv` file and saved along with their respective metadata 
+(`model_a_metadata.json`, `model_b_metadata.json`).
+
+### Dataset Split
+The `unseen_segment.csv` file is used as the evaluation basis. It was not used during training or validation. To split it 
+reproducibly:
+- A hash of the `Id` column to split the dataset is used:
+  - Records where `hash(Id) % 2 == 0` → assigned to Group A
+  - Records where `hash(Id) % 2 == 1` → assigned to Group B
+
+This ensures:
+- Even and fair splitting
+- Reproducibility across test runs 
+- No overlap between groups
+
+### Implementation
+The script `ab_test_runner.py`:
+- Loads both trained models and their metadata
+- Prepares features based on each model's original feature set (from metadata)
+- Applies predictions on each split 
+- Computes accuracy for both model versions
+- Logs the outcome to `logs/ab_test_log_<timestamp>.txt` (accuracy per model + final comparison message)
+

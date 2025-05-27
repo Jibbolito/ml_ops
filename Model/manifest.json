@@ -1,0 +1,8 @@
+{
+    "latest_version": "v_20250527_160737",
+    "model_path": "C:\\Users\\vikho\\PycharmProjects\\ML_Ops_T1\\Model\\model_rf.joblib",
+    "metadata_path": "C:\\Users\\vikho\\PycharmProjects\\ML_Ops_T1\\Model\\model_metadata.json",
+    "flow_version": "default",
+    "n_estimators": 100,
+    "max_depth": null
+}

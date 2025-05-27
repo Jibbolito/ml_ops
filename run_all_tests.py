@@ -7,13 +7,22 @@ from Tests.test_missing import strict_null_check
 from Tests.test_distribution import test_income_distribution, test_house_ownership_distribution
 from helper_functions import get_data_path
 from Model.model_trainer import train_model
+import argparse
+
 
 
 
 
 def run_all(main_log_handle):
     print("\nRunning model training step...")
-    train_model()
+    parser = argparse.ArgumentParser(description="Train Random Forest Model")
+    parser.add_argument("--n_estimators", type=int, default=100, help="Number of trees")
+    parser.add_argument("--max_depth", type=int, default=None, help="Max tree depth")
+    parser.add_argument("--flow_version", type=str, default="default", help="Flow version tag")
+
+    args = parser.parse_args()
+    train_model(args.n_estimators, args.max_depth, args.flow_version)
+
     print("Running all tests on clean data...")
     df_clean = pd.read_csv(get_data_path("up_clean.csv"))
     strict_null_check(df_clean)

@@ -60,7 +60,6 @@ def train_ab_model(variant, n_estimators=100, max_depth=None):
     model_filename = f"Model/{variant}.joblib"
     joblib.dump(model, model_filename)
     print(f"✅ Model saved to: {model_filename}")
-
     save_model_metadata(model, X_test, y_test, y_pred, model_filename)
 
 if __name__ == "__main__":

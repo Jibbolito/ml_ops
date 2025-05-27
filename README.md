@@ -171,10 +171,19 @@ We chose Jensen-Shannon divergence (JS divergence) as our drift metric because i
 - Is more interpretable, since a value near 0 means “very similar distributions” and near 1 means “very different”
 - Is designed to compare probability distributions, not raw counts
 
+### Choosing the Unseen Segment
+To simulate realistic monitoring and post-deployment evaluation, we split the original dataset into two disjoint sets:
+- `train_data.csv`: Used for training and internal validation (model sees this data). 
+- `unseen_segment.csv`: Held out completely during training. Used exclusively for post-deployment drift monitoring and A/B testing.
 
-Expected Behavior:
-We use the cleaned and validated segment `train_data.csv` as our reference distribution and `unseen_segment.csv` as incoming 
-(unseen) data. A JS divergence value below 0.05 is considered stable, while higher values indicate possible drift.
+The split is random but deterministic, based on a hash of the Id column. This ensures:
+- Fair distribution of examples between training and unseen segments.
+- Reproducibility across runs.
+
+This setup mimics a real production scenario, where incoming user data is unseen during training, and must be validated for drift and tested for performance consistency.
+
+### Expected Behavior
+A JS divergence value below 0.05 is considered stable, while higher values indicate possible drift.
 
 ### Logging
 Each drift monitoring run automatically writes its results to a timestamped log file under logs/.
@@ -232,3 +241,32 @@ The script `ab_test_runner.py`:
 - Computes accuracy for both model versions
 - Logs the outcome to `logs/ab_test_log_<timestamp>.txt` (accuracy per model + final comparison message)
 
+### Execution Flow: Forked Prediction Paths
+The A/B test script (`ab_test_runner.py`) simulates a forked execution flow by:
+- Loading two independently trained model variants (`model_a` and `model_b`)
+- Splitting the unseen evaluation dataset into two groups (Group A and Group B) using a deterministic hash on the ID field 
+- Applying each model to its corresponding group in parallel code branches
+
+While this is implemented as a linear script, it effectively mimics a forked execution where two flows operate
+independently on different inputs using different model configurations. This structure provides a clean 
+separation between model paths and supports isolated evaluation for reliable A/B comparisons.
+
+### Managing Multiple A/B Tests
+To support multiple concurrent or sequential A/B tests, we rely on:
+- Explicit flow version tags (e.g., `ab_test_round1`)
+- Model metadata tracking (`model_metadata.json`) that includes the flow version and hyperparameters
+- Timestamps in log filenames (e.g., `ab_test_log_20250527_141021.txt`)
+
+In a realistic setup:
+- A unique flow_version ID (e.g., `ab_test_depth10_vs_depth15`) could be used to label the test run
+- Each test log file would be stored with that version ID and timestamp
+- If using a tool like MLflow, test metadata (accuracy, parameters, timing) would be tagged and searchable
+
+#### Hypothetical Solution for Scaling A/B Tests
+If multiple A/B tests were to run concurrently, we would:
+- Create a registry mapping flow versions → model IDs
+- Include a `test_id` parameter in the A/B test runner script
+- Log results to `ab_test_<test_id>_<timestamp>.log`
+- Store evaluations in a centralized location or experiment tracker for comparison
+
+This would allow for robust historical comparison and reproducibility across test campaigns.

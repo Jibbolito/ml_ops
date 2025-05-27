@@ -9,6 +9,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from Model.version_model import create_model_version
+import subprocess
+
+def get_git_commit():
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+    except Exception:
+        return "Not a git repo or hash unavailable"
 
 os.makedirs("logs", exist_ok=True)
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +81,8 @@ def train_model(n_estimators, max_depth, flow_version):
         "model_file": os.path.basename(model_path),
         "flow_version": flow_version,
         "n_estimators": n_estimators,
-        "max_depth": max_depth
+        "max_depth": max_depth,
+        "git_commit": get_git_commit()
     }
 
     metadata_path = os.path.join("Model", "model_metadata.json")

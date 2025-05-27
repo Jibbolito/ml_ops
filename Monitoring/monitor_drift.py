@@ -29,7 +29,6 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s: %(message)s",
     handlers=[
         logging.FileHandler(log_path, encoding="utf-8"),
-        SafeStreamHandler()
     ]
 )
 

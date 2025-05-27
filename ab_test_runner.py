@@ -49,6 +49,12 @@ def run_all(main_log_handle):
     result = subprocess.run(["python", "Model/generate_summary.py"], text=True)
     print("✅ Summary file written to Model/model_summary.md")
 
+    print("\n\nEnsuring models for A/B test exist:")
+    subprocess.run(
+        ["python", "train_ab_model.py", "--variant", "model_a", "--n_estimators", "100", "--max_depth", "10"])
+    subprocess.run(
+        ["python", "train_ab_model.py", "--variant", "model_b", "--n_estimators", "150", "--max_depth", "15"])
+
     print("\n\nRunning offline A/B test:")
     ab_log_path = os.path.join("logs", f"ab_test_log_{timestamp}.txt")
     with open(ab_log_path, "w", encoding="utf-8") as ab_log:

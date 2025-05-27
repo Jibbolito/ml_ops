@@ -80,7 +80,7 @@ docker build -t mlops-tests .
 ```
 and run:
 ```bash
-docker run --rm -v ${PWD}/logs:/app/logs -v ${PWD}/Model:/app/Model mlops-tests
+docker run --rm -v ${PWD}/logs:/app/logs -v ${PWD}/Model:/app/Model -v ${PWD}/Data:/app/Data mlops-tests
 ```
 ### Notes on Docker
 The `docker run` command includes volume mounts:
@@ -161,6 +161,22 @@ model from silently producing unreliable outputs and helps surface potential dat
  during deployment. These checks are executed via `robustness_check.py` and integrated into the testing workflow. Each robustness check is logged separately in `logs/robustness_log_<timestamp>.txt`. This isolates critical robustness test failures from standard data validation logs and supports detailed debugging when inference reliability is at risk.
 
 # Task 3 - Post-deployment Monitoring & Drift Detection
+
+### Unified Docker Execution (Flow Orchestration)
+The Dockerfile now uses a single entrypoint to launch the entire pipeline, including:
+- Full data validation tests (`run_all_tests.py`)
+- Drift detection (`monitor_drift.py`)
+- Model versioning and summary generation 
+- A/B variant training (`train_ab_model.py`)
+- A/B test execution (`ab_test_runner.py`)
+
+This setup simulates a production-grade orchestration where:
+- All components are bundled into a self-contained image
+- A single `docker run` command reproduces the full pipeline
+- All logs are saved and mounted into the host machine for traceability
+
+This approach ensures testability, reproducibility, and easier CI/CD integration.
+
 ## Part 1 - Drift Detection using Jensen-Shannon Divergence
 To monitor for data drift after deployment, we implemented a dedicated monitoring flow (`monitor_drift.py`) that analyzes 
 changes in the distribution of the Income feature between training and unseen data.

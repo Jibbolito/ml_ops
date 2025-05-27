@@ -14,6 +14,11 @@ os.makedirs(central_log_dir, exist_ok=True)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_path = os.path.join(central_log_dir, f"drift_log_{timestamp}.txt")
 
+def get_data_path(filename):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "Data", filename)
+
+
 # Helper: Remove emojis for console
 def remove_emojis(text):
     return re.sub(r'[^\x00-\x7F]+', '', text)
@@ -57,6 +62,7 @@ def monitor_income_drift(reference_path, current_path, threshold=0.05, bins=10):
         logging.info("✅ No significant drift detected in 'Income'.")
 
 if __name__ == "__main__":
-    reference = get_data_path_root("up_clean.csv")
-    current = get_data_path_root("unseen_segment.csv")
+    reference = get_data_path("up_clean.csv")
+    current = get_data_path("unseen_segment.csv")
     monitor_income_drift(reference, current)
+

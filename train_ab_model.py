@@ -7,12 +7,11 @@ from datetime import datetime, timezone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from helper_functions import get_data_path_root
-
 
 def get_data_path(filename):
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_dir, "Data", filename)
+
 
 def save_model_metadata(model, X, y_true, y_pred, output_path):
     metadata = {
@@ -34,15 +33,14 @@ def save_model_metadata(model, X, y_true, y_pred, output_path):
 
 def train_ab_model(variant, n_estimators=100, max_depth=None):
     print(f"📦 Training variant: {variant}")
-    df = pd.read_csv(get_data_path_root("train_data.csv"))
+    df = pd.read_csv(get_data_path("train_data.csv"))
 
     target = "Risk_Flag"
     features = ["Income", "Age", "Experience", "CURRENT_JOB_YRS", "CURRENT_HOUSE_YRS",
                 "Married/Single", "House_Ownership", "Car_Ownership", "Profession", "CITY", "STATE"]
 
-    X = df[features]
+    X = pd.get_dummies(df[features], drop_first=True)
     y = df[target]
-    X = pd.get_dummies(X, drop_first=True)
 
     if len(X) < 1000:
         raise ValueError("❌ Not enough training samples.")

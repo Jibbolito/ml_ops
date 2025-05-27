@@ -5,7 +5,6 @@ import logging
 from sklearn.metrics import accuracy_score
 from datetime import datetime
 import os
-from helper_functions import get_data_path_root
 import sys
 
 
@@ -23,6 +22,9 @@ logging.basicConfig(
     ]
 )
 
+def get_data_path(filename):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "Data", filename)
 
 def deterministic_split(df, id_column="Id"):
     hash_vals = df[id_column].astype(str).apply(lambda x: int(hashlib.md5(x.encode()).hexdigest(), 16))
@@ -61,7 +63,7 @@ def evaluate(model_name, model, features, labels):
 if __name__ == "__main__":
     logging.info("📊 Starting A/B test on unseen_segment.csv")
 
-    df = pd.read_csv(get_data_path_root("unseen_segment.csv"))
+    df = pd.read_csv(get_data_path("unseen_segment.csv"))
 
     df_a, df_b = deterministic_split(df)
 

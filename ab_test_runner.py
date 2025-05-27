@@ -1,79 +1,75 @@
 import pandas as pd
-import joblib
-import hashlib
-import logging
-from sklearn.metrics import accuracy_score
-from datetime import datetime
-import os
-from helper_functions import get_data_path_root
 import sys
+import os
+import datetime
+import subprocess
+from Tests.test_missing import strict_null_check
+from Tests.test_distribution import test_income_distribution, test_house_ownership_distribution
+from helper_functions import get_data_path
+from Model.model_trainer import train_model
 
+def run_all(main_log_handle):
+    print("\nRunning model training step...")
+    # Replace with explicit parameters if needed
+    train_model(n_estimators=100, max_depth=None, flow_version="run_all_tests")
 
-# Setup logging
-os.makedirs("logs", exist_ok=True)
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_path = os.path.join("logs", f"ab_test_log_{timestamp}.txt")
+    print("Running all tests on clean data...")
+    df_clean = pd.read_csv(get_data_path("up_clean.csv"))
+    strict_null_check(df_clean)
+    test_income_distribution(df_clean)
+    test_house_ownership_distribution(df_clean)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s: %(message)s",
-    handlers=[
-        logging.FileHandler(log_path, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)  # Force stdout encoding support
-    ]
-)
+    print("\nRunning all tests on dirty data...")
+    df_dirty = pd.read_csv(get_data_path("up_dirty.csv"))
+    for test_func in [strict_null_check, test_income_distribution, test_house_ownership_distribution]:
+        try:
+            test_func(df_dirty)
+        except AssertionError as e:
+            print(e)
 
+    print("\n\nRunning inference tests... (results in separate log at the same location)")
+    inference_log_path = os.path.join("logs", f"inference_log_{timestamp}.txt")
+    with open(inference_log_path, "w", encoding="utf-8") as inference_log:
+        result = subprocess.run(["python", "Tests/test_inference.py"], stdout=inference_log, stderr=inference_log, text=True)
+        print(f"{'✅' if result.returncode == 0 else '❌'} Inference log saved to: {inference_log_path}")
 
-def deterministic_split(df, id_column="Id"):
-    hash_vals = df[id_column].astype(str).apply(lambda x: int(hashlib.md5(x.encode()).hexdigest(), 16))
-    return df[hash_vals % 2 == 0], df[hash_vals % 2 == 1]
+    print("\n\nRunning robustness check:")
+    robustness_log_path = os.path.join("logs", f"robustness_log_{timestamp}.txt")
+    with open(robustness_log_path, "w", encoding="utf-8") as robustness_log:
+        result = subprocess.run(["python", "Model/robustness_check.py"], stdout=robustness_log, stderr=robustness_log, text=True)
+        print(f"{'✅' if result.returncode == 0 else '❌'} Robustness log saved to: {robustness_log_path}")
 
-def load_model_and_metadata(model_name):
-    model_path = f"Model/{model_name}.joblib"
-    meta_path = f"Model/{model_name}_metadata.json"
-    model = joblib.load(model_path)
-    with open(meta_path) as f:
-        metadata = pd.read_json(f)
-    return model, metadata["feature_names"]
+    print("\n\nRunning drift monitoring:")
+    drift_log_path = os.path.join("logs", f"drift_log_{timestamp}.txt")
+    with open(drift_log_path, "w", encoding="utf-8") as drift_log:
+        result = subprocess.run(["python", "Monitoring/monitor_drift.py"], stdout=drift_log, stderr=drift_log, text=True)
+        print(f"{'✅' if result.returncode == 0 else '❌'} Drift log saved to: {drift_log_path}")
 
-def prepare_features(df, feature_names):
-    df_encoded = pd.get_dummies(df, drop_first=True)
+    print("\n\nGenerating model summary:")
+    result = subprocess.run(["python", "Model/generate_summary.py"], text=True)
+    print("✅ Summary file written to Model/model_summary.md")
 
-    # Create a DataFrame with all missing columns in one go (avoids fragmentation)
-    missing_cols = [col for col in feature_names if col not in df_encoded.columns]
-    if missing_cols:
-        filler_df = pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)
-        df_encoded = pd.concat([df_encoded, filler_df], axis=1)
+    print("\n\nRunning offline A/B test:")
+    ab_log_path = os.path.join("logs", f"ab_test_log_{timestamp}.txt")
+    with open(ab_log_path, "w", encoding="utf-8") as ab_log:
+        result = subprocess.run(["python", "ab_test_runner.py"], stdout=ab_log, stderr=ab_log, text=True)
+        print(f"{'✅' if result.returncode == 0 else '❌'} A/B test log saved to: {ab_log_path}")
 
-    # Reorder columns to match training features
-    df_encoded = df_encoded[feature_names]
-
-    # Return a copy to defragment the internal blocks
-    return df_encoded.copy()
-
-
-def evaluate(model_name, model, features, labels):
-    predictions = model.predict(features)
-    accuracy = accuracy_score(labels, predictions)
-    logging.info(f"✅ {model_name} Accuracy: {accuracy:.4f}")
-    return accuracy
 
 if __name__ == "__main__":
-    logging.info("📊 Starting A/B test on unseen_segment.csv")
+    os.makedirs("logs", exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    main_log_path = os.path.join("logs", f"data_log_{timestamp}.txt")
 
-    df = pd.read_csv(get_data_path_root("unseen_segment.csv"))
+    with open(main_log_path, "w", encoding="utf-8") as f:
+        orig_stdout = sys.stdout
+        orig_stderr = sys.stderr
+        sys.stdout = f
+        sys.stderr = f
 
-    df_a, df_b = deterministic_split(df)
-
-    model_a, features_a = load_model_and_metadata("model_a")
-    model_b, features_b = load_model_and_metadata("model_b")
-
-    Xa = prepare_features(df_a, features_a)
-    Xb = prepare_features(df_b, features_b)
-    ya = df_a["Risk_Flag"]
-    yb = df_b["Risk_Flag"]
-
-    acc_a = evaluate("model_a", model_a, Xa, ya)
-    acc_b = evaluate("model_b", model_b, Xb, yb)
-
-    logging.info(f"📊 A/B comparison complete — model_a: {acc_a:.4f}, model_b: {acc_b:.4f}")
+        try:
+            run_all(f)
+        finally:
+            sys.stdout = orig_stdout
+            sys.stderr = orig_stderr
+            print(f"✅ Main test logs saved to: /logs")

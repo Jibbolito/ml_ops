@@ -181,7 +181,25 @@ Each drift monitoring run automatically writes its results to a timestamped log 
 The log contains the divergence value and a success or warning message with emoji indicators for easier interpretation. Emojis are kept 
 in the log file, and automatically filtered from console output to avoid encoding issues on Windows terminals.
 
-## Part 2 - Offline A/B Testing of Model Variants
+## Part 2 - Flow Versioning and Configuration Tracking
+To support experimentation and auditability, the training pipeline now includes full flow configuration tracking:
+- The script `model_trainer.py` accepts arguments for `n_estimators`, `max_depth`, and a `flow_version` tag.
+- These parameters are recorded in the `model_metadata.json` and also propagated into the `manifest.json`. 
+- Each model version folder stores a snapshot of the trained model and its metadata.
+
+Example command:
+```bash
+python Model/model_trainer.py --n_estimators 150 --max_depth 10 --flow_version ab_test_round1
+```
+This results in:
+- A versioned model saved under `Model/versions/` 
+- A metadata file capturing flow-specific hyperparameters and identifiers 
+- A `manifest.json` with audit info for the latest model
+
+This setup allows consistent tracking of model lineage and configuration changes — essential for reproducible A/B testing 
+and diagnostics in real-world ML operations.
+
+## Part 3 - Offline A/B Testing of Model Variants
 To evaluate the performance of different model configurations before deployment, a deterministic and reproducible 
 offline A/B test setup was implemented. This helps compare model behavior on the same target population using a clean and
 controlled evaluation method.

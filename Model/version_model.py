@@ -26,10 +26,20 @@ def create_model_version():
         shutil.copy(latest_model, os.path.join(version_path, "model.joblib"))
         shutil.copy(latest_metadata, os.path.join(version_path, "metadata.json"))
 
+        # Load flow info from metadata
+        with open(latest_metadata) as meta_file:
+            metadata = json.load(meta_file)
+            flow_version = metadata.get("flow_version", "unknown")
+            n_estimators = metadata.get("n_estimators", None)
+            max_depth = metadata.get("max_depth", None)
+
         manifest = {
             "latest_version": f"v_{timestamp}",
             "model_path": os.path.abspath(latest_model),
-            "metadata_path": os.path.abspath(latest_metadata)
+            "metadata_path": os.path.abspath(latest_metadata),
+            "flow_version": flow_version,
+            "n_estimators": n_estimators,
+            "max_depth": max_depth
         }
 
         with open(os.path.join(model_dir, "manifest.json"), "w") as f:

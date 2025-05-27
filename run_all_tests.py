@@ -15,13 +15,7 @@ import argparse
 
 def run_all(main_log_handle):
     print("\nRunning model training step...")
-    parser = argparse.ArgumentParser(description="Train Random Forest Model")
-    parser.add_argument("--n_estimators", type=int, default=100, help="Number of trees")
-    parser.add_argument("--max_depth", type=int, default=None, help="Max tree depth")
-    parser.add_argument("--flow_version", type=str, default="default", help="Flow version tag")
-
-    args = parser.parse_args()
-    train_model(args.n_estimators, args.max_depth, args.flow_version)
+    train_model(n_estimators=100, max_depth=None, flow_version="run_all_tests")
 
     print("Running all tests on clean data...")
     df_clean = pd.read_csv(get_data_path("up_clean.csv"))
@@ -82,6 +76,12 @@ def run_all(main_log_handle):
         except subprocess.CalledProcessError as e:
             print(f"❌ Robustness subprocess error: {e}")
 
+    print("\n\nRunning drift monitoring:")
+    drift_log_path = os.path.join("logs", f"drift_log_{timestamp}.txt")
+    with open(drift_log_path, "w", encoding="utf-8") as drift_log:
+        result = subprocess.run(["python", "Monitoring/monitor_drift.py"], stdout=drift_log, stderr=drift_log,
+                                text=True)
+        print(f"{'✅' if result.returncode == 0 else '❌'} Drift log saved to: {drift_log_path}")
 
 
 if __name__ == "__main__":

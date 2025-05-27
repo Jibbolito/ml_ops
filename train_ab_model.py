@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 import joblib
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -17,7 +17,7 @@ def get_data_path(filename):
 def save_model_metadata(model, X, y_true, y_pred, output_path):
     metadata = {
         "model_type": type(model).__name__,
-        "trained_at": datetime.utcnow().isoformat() + "Z",
+        "trained_at": datetime.now(timezone.utc).isoformat(),
         "n_features": X.shape[1],
         "feature_names": list(X.columns),
         "n_samples": len(X),

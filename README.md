@@ -71,7 +71,7 @@ category validation tests out of the box. These features were only introduced in
 Therefore, the tests are implemented as standalone Python functions with clear pass/fail behavior, 
 readable output, and justifications provided inline.
 
-## How to Run the Tests
+## How to Run the Code
 
 ### With Docker
 Build:
@@ -191,22 +191,40 @@ The log contains the divergence value and a success or warning message with emoj
 in the log file, and automatically filtered from console output to avoid encoding issues on Windows terminals.
 
 ## Part 2 - Flow Versioning and Configuration Tracking
-To support experimentation and auditability, the training pipeline now includes full flow configuration tracking:
-- The script `model_trainer.py` accepts arguments for `n_estimators`, `max_depth`, and a `flow_version` tag.
-- These parameters are recorded in the `model_metadata.json` and also propagated into the `manifest.json`. 
-- Each model version folder stores a snapshot of the trained model and its metadata.
+To support experimentation and auditability, the training pipeline now includes flow configuration tracking and training 
+code versioning.
+
+### Configuration Tracking
+The script `model_trainer.py` accepts arguments for:
+- `n_estimators`:number of trees in the Random Forest
+- `max_depth`: maximum depth per tree
+- `flow_version`: human-readable tag for experiment tracking
+
+These parameters are:
+- Recorded in the `model_metadata.json`
+- Propagated into the `manifest.json`. 
+- Saved in a timestamped version folder inside Model/versions/
 
 Example command:
 ```bash
 python Model/model_trainer.py --n_estimators 150 --max_depth 10 --flow_version ab_test_round1
 ```
 This results in:
-- A versioned model saved under `Model/versions/` 
-- A metadata file capturing flow-specific hyperparameters and identifiers 
-- A `manifest.json` with audit info for the latest model
+- A trained model saved under `Model/model_rf.joblib`
+- A complete metadata record including configuration, performance, and feature set
+- A new version folder created at `Model/versions/v_<timestamp>/` with the model and metadata
+- A `manifest.json` reflecting the latest version
 
-This setup allows consistent tracking of model lineage and configuration changes — essential for reproducible A/B testing 
-and diagnostics in real-world ML operations.
+### Git-based Code Versioning
+To ensure full reproducibility of not only the training configuration but also the training code, the pipeline captures 
+the current Git commit hash during model training. This is accomplished using:
+```bash
+git rev-parse HEAD
+```
+The resulting commit hash is stored in the `model_metadata.json` under the key `git_commit`, making it easy to trace the 
+exact version of the code that produced each model. This ensures that any future evaluation, retraining, or debugging step 
+can reliably reference and reproduce both the model and the code that generated it.
+
 
 ## Part 3 - Offline A/B Testing of Model Variants
 To evaluate the performance of different model configurations before deployment, a deterministic and reproducible 

@@ -31,6 +31,8 @@ logging.basicConfig(
         logging.FileHandler(log_path, encoding="utf-8"),
     ]
 )
+logging.getLogger().addHandler(SafeStreamHandler())
+
 
 def calculate_js_divergence(p, q):
     return jensenshannon(p, q, base=2) ** 2

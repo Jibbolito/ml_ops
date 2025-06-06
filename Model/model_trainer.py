@@ -21,6 +21,10 @@ model_dir = project_root / "Model"
 logs_dir = project_root / "logs"
 version_dir = model_dir / "versions"
 
+# Ensure folders exist
+model_dir.mkdir(parents=True, exist_ok=True)
+logs_dir.mkdir(parents=True, exist_ok=True)
+
 def setup_logging():
     os.makedirs("logs", exist_ok=True)
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -93,13 +97,6 @@ def train_model(n_estimators, max_depth, flow_version):
     accuracy = accuracy_score(y_test, y_pred)
     logging.info(f"✅ Model trained. Accuracy: {accuracy:.2%}")
 
-    # Directories
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    model_dir = os.path.join(base_dir, "Model")
-
-    # Ensure folders exist
-    model_dir.mkdir(parents=True, exist_ok=True)
-    logs_dir.mkdir(parents=True, exist_ok=True)
 
     # Save model
     model_path = model_dir / "model_rf.joblib"

@@ -4,7 +4,6 @@ import numpy as np
 from scipy.spatial.distance import jensenshannon
 import logging
 from datetime import datetime
-from helper_functions import get_data_path_root
 import re
 
 # Write logs to the central /logs folder (one level above)

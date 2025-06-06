@@ -1,7 +1,6 @@
 import warnings
 import pandas as pd
 import json
-from helper_functions import get_data_path_root
 import os
 import logging
 import joblib
@@ -11,6 +10,10 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
+
+def get_data_path(filename):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "Data", filename)
 
 # Resolve model path relative to the script's location
 current_dir = Path(__file__).resolve().parent
@@ -85,7 +88,7 @@ def run_robustness_check(df):
 
 if __name__ == "__main__":
     logging.info("Running tests on clean data...")
-    run_robustness_check(pd.read_csv(get_data_path_root("up_clean.csv")))
+    run_robustness_check(pd.read_csv(get_data_path("up_clean.csv")))
 
     logging.info("Running tests on dirty data...")
     run_robustness_check(simulate_error_data())

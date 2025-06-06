@@ -1,7 +1,10 @@
 import pandas as pd
 import logging
-from helper_functions import get_data_path_root
+import os
 
+def get_data_path(filename):
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_dir, "Data", filename)
 
 def test_predictions_binary(df: pd.DataFrame):
     """Check if predictions are only 0 or 1."""
@@ -27,7 +30,7 @@ def test_prediction_distribution(df: pd.DataFrame):
 # Run all tests
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    df = pd.read_csv(get_data_path_root("predictions.csv"))
+    df = pd.read_csv(get_data_path("predictions.csv"))
     test_predictions_binary(df)
     test_no_missing_predictions(df)
     test_prediction_distribution(df)

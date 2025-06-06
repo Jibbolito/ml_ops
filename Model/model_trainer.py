@@ -10,6 +10,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from Model.version_model import create_model_version
 import subprocess
+from pathlib import Path
+
+
+project_root = Path(__file__).resolve().parents[1]
+
+# Define folders relative to project root
+data_dir = project_root / "Data"
+model_dir = project_root / "Model"
+logs_dir = project_root / "logs"
+version_dir = model_dir / "versions"
 
 def setup_logging():
     os.makedirs("logs", exist_ok=True)
@@ -83,12 +93,18 @@ def train_model(n_estimators, max_depth, flow_version):
     accuracy = accuracy_score(y_test, y_pred)
     logging.info(f"✅ Model trained. Accuracy: {accuracy:.2%}")
 
-    # Save model
+    # Directories
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     model_dir = os.path.join(base_dir, "Model")
-    os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, "model_rf.joblib")
+
+    # Ensure folders exist
+    model_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save model
+    model_path = model_dir / "model_rf.joblib"
     joblib.dump(model, model_path)
+
     logging.info(f"✅ Model saved to: {model_path}")
 
     # Save metadata with hyperparams and flow version
@@ -107,7 +123,7 @@ def train_model(n_estimators, max_depth, flow_version):
         "git_commit": get_git_commit()
     }
 
-    metadata_path = os.path.join("Model", "model_metadata.json")
+    metadata_path = model_dir / "model_metadata.json"
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
     logging.info(f"✅ Metadata saved to: {metadata_path}")

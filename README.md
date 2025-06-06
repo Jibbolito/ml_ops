@@ -74,7 +74,11 @@ docker build -t mlops-tests .
 ```
 and run:
 ```bash
-docker run --rm -v ${PWD}/logs:/app/logs -v ${PWD}/Model:/app/Model -v ${PWD}/Data:/app/Data mlops-tests
+docker run --rm \
+  -v ${PWD}/Data:/app/Data \
+  -v ${PWD}/Model:/app/Model \
+  -v ${PWD}/logs:/app/logs \
+  mlops-tests
 ```
 
 ### Notes on Docker

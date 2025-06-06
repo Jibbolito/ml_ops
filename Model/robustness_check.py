@@ -12,8 +12,8 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 logging.basicConfig(level=logging.INFO)
 
 def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    return os.path.join(base_dir, "Data", filename)
+    project_root = Path(__file__).resolve().parents[1]
+    return os.path.join(project_root, "Data", filename)
 
 # Resolve model path relative to the script's location
 current_dir = Path(__file__).resolve().parent

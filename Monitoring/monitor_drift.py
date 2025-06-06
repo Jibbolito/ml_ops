@@ -14,7 +14,7 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 log_path = os.path.join(central_log_dir, f"drift_log_{timestamp}.txt")
 
 def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, "Data", filename)
 
 

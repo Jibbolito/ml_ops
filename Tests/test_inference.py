@@ -3,8 +3,9 @@ import logging
 import os
 
 def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, "Data", filename)
+
 
 def test_predictions_binary(df: pd.DataFrame):
     """Check if predictions are only 0 or 1."""

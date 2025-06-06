@@ -18,8 +18,9 @@ def get_data_path(filename):
 # Resolve model path relative to the script's location
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent
-model_path = project_root / "Model" / "Model" / "model_rf.joblib"
-json_path = project_root / "Model" / "Model" / "model_metadata.json"
+project_root = Path(__file__).resolve().parents[1]
+model_path = project_root / "Model" / "model_rf.joblib"
+json_path = project_root / "Model" / "model_metadata.json"
 
 
 try:
@@ -54,7 +55,7 @@ def validate_input(df, expected_features):
 
 
 def simulate_error_data():
-    df = pd.read_csv(get_data_path_root("up_clean.csv"))
+    df = pd.read_csv(get_data_path("up_clean.csv"))
     df.loc[0, "Income"] = None
     df.loc[1, "House_Ownership"] = "unknown"
     df.loc[2, "Married/Single"] = 12345

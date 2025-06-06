@@ -84,8 +84,10 @@ def train_model(n_estimators, max_depth, flow_version):
     logging.info(f"✅ Model trained. Accuracy: {accuracy:.2%}")
 
     # Save model
-    model_path = os.path.join("Model", "model_rf.joblib")
-    os.makedirs("Model", exist_ok=True)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    model_dir = os.path.join(base_dir, "Model")
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, "model_rf.joblib")
     joblib.dump(model, model_path)
     logging.info(f"✅ Model saved to: {model_path}")
 

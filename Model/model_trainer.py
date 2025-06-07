@@ -112,7 +112,7 @@ def train_model(n_estimators, max_depth, flow_version):
         "feature_names": list(X.columns),
         "n_samples": len(X),
         "accuracy": accuracy,
-        "model_path": model_path,
+        "model_path": str(model_path),
         "model_file": os.path.basename(model_path),
         "flow_version": flow_version,
         "n_estimators": n_estimators,

@@ -4,6 +4,36 @@ The dataset is used to predict whether an individual will receive a risk flag (a
 represents a flagged risky applicant and 0 represents a non-risky applicant).
 This application is highly relevant in banking and credit scoring, where loan risk assessments are part of routine decision-making.
 
+# How to Run the Code
+
+## With Docker
+Build:
+```bash
+docker build -t mlops-tests .
+```
+and run:
+```bash
+docker run --rm -v ${PWD}/Data:/app/Data -v ${PWD}/Model:/app/Model -v ${PWD}/logs:/app/logs mlops-tests
+```
+This will run the code for all 3 exercises at once.
+## Notes on Docker
+The `docker run` command mounts:
+- `logs/` for storing test logs
+- `Model/` to persist models and versioned artifacts
+- `Data/` to ensure the dataset is accessible
+
+Ensure these folders exist locally, or Docker will create them.
+
+## Logging Test Results
+
+Each run generates timestamped logs under `logs/`. Logs support reproducibility, comparison, and debugging throughout the MLOps cycle.
+
+## Test Sets
+Two test sets are provided, derived from the state "Uttar_Pradesh":
+- `up_clean.csv`: the original subset
+- `up_dirty.csv`: a manipulated version expected to fail
+
+   
 # Task 1
 ## Scenario  
 A new batch of data arrives from a branch located in a specific Indian state. Is this data suitable for model inference and operational use?
@@ -65,38 +95,6 @@ Newer features (e.g., `custom_tests`) introduced in `0.7.x` are incompatible wit
 
 Thus, simple Python-based tests are used to ensure clear, assertive behavior with good readability.
 
-## How to Run the Code
-
-### With Docker
-Build:
-```bash
-docker build -t mlops-tests .
-```
-and run:
-```bash
-docker run --rm \
-  -v ${PWD}/Data:/app/Data \
-  -v ${PWD}/Model:/app/Model \
-  -v ${PWD}/logs:/app/logs \
-  mlops-tests
-```
-
-### Notes on Docker
-The `docker run` command mounts:
-- `logs/` for storing test logs
-- `Model/` to persist models and versioned artifacts
-- `Data/` to ensure the dataset is accessible
-
-Ensure these folders exist locally, or Docker will create them.
-
-### Logging Test Results
-
-Each run generates timestamped logs under `logs/`. Logs support reproducibility, comparison, and debugging throughout the MLOps cycle.
-
-### Test Sets
-Two test sets are provided, derived from the state "Uttar_Pradesh":
-- `up_clean.csv`: the original subset
-- `up_dirty.csv`: a manipulated version expected to fail
 
 # Task 2
 ## Part 1 - Model

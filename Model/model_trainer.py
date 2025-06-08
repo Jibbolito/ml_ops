@@ -17,7 +17,7 @@ project_root = Path(__file__).resolve().parents[1]
 
 # Define folders relative to project root
 data_dir = project_root / "Data"
-model_dir = project_root / "Model"
+model_dir = project_root / "Model" / "Current_Model"
 logs_dir = project_root / "logs"
 version_dir = model_dir / "versions"
 

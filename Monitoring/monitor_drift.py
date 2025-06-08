@@ -4,38 +4,16 @@ import numpy as np
 from scipy.spatial.distance import jensenshannon
 import logging
 from datetime import datetime
-import re
-
-# Write logs to the central /logs folder (one level above)
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # up to project root
-central_log_dir = os.path.join(base_dir, "logs")
-os.makedirs(central_log_dir, exist_ok=True)
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_path = os.path.join(central_log_dir, f"drift_log_{timestamp}.txt")
 
 def get_data_path(filename):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, "Data", filename)
 
-
-# Helper: Remove emojis for console
-def remove_emojis(text):
-    return re.sub(r'[^\x00-\x7F]+', '', text)
-
-class SafeStreamHandler(logging.StreamHandler):
-    def emit(self, record):
-        record.msg = remove_emojis(str(record.msg))
-        super().emit(record)
-
-# Configure logging: file (emoji), terminal (safe)
+# Setup logging to use root logger
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s: %(message)s",
-    handlers=[
-        logging.FileHandler(log_path, encoding="utf-8"),
-    ]
+    format="%(asctime)s %(levelname)s: %(message)s"
 )
-
 
 def calculate_js_divergence(p, q):
     return jensenshannon(p, q, base=2) ** 2
@@ -63,4 +41,3 @@ if __name__ == "__main__":
     reference = get_data_path("up_clean.csv")
     current = get_data_path("unseen_segment.csv")
     monitor_income_drift(reference, current)
-

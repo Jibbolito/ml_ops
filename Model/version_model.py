@@ -1,52 +1,46 @@
 import os
 import shutil
-import datetime
 import json
-import logging  # ✅ correct import
+from datetime import datetime
+import logging
 
 def create_model_version():
     try:
         print("📦 Versioning script started.")
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # /app or local
         model_dir = os.path.join(base_dir, "Model")
+        current_model_dir = os.path.join(model_dir, "Current_Model")
         version_root = os.path.join(model_dir, "versions")
-        latest_model = os.path.join(model_dir, "model_rf.joblib")
-        latest_metadata = os.path.join(model_dir, "model_metadata.json")
+        os.makedirs(version_root, exist_ok=True)
 
-        print(f"📂 Checking paths:")
-        print(f"Model file path: {latest_model}")
-        print(f"Metadata file path: {latest_metadata}")
-        print(f"Exists? model: {os.path.exists(latest_model)}, metadata: {os.path.exists(latest_metadata)}")
+        latest_model = os.path.join(current_model_dir, "model_rf.joblib")
+        latest_metadata = os.path.join(current_model_dir, "model_metadata.json")
 
+        # Check if files exist
+        if not os.path.exists(latest_model) or not os.path.exists(latest_metadata):
+            raise FileNotFoundError("Model or metadata not found in Current_Model folder")
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        version_path = os.path.join(version_root, f"v_{timestamp}")
-        os.makedirs(version_path, exist_ok=True)
+        # Create new version directory
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        version_dir = os.path.join(version_root, f"v_{timestamp}")
+        os.makedirs(version_dir, exist_ok=True)
 
-        shutil.copy(latest_model, os.path.join(version_path, "model.joblib"))
-        shutil.copy(latest_metadata, os.path.join(version_path, "metadata.json"))
+        # Copy files
+        shutil.copy(latest_model, os.path.join(version_dir, "model_rf.joblib"))
+        shutil.copy(latest_metadata, os.path.join(version_dir, "model_metadata.json"))
 
-        # Load flow info from metadata
-        with open(latest_metadata) as meta_file:
-            metadata = json.load(meta_file)
-            flow_version = metadata.get("flow_version", "unknown")
-            n_estimators = metadata.get("n_estimators", None)
-            max_depth = metadata.get("max_depth", None)
-
+        # Update manifest
         manifest = {
             "latest_version": f"v_{timestamp}",
-            "model_path": os.path.abspath(latest_model),
-            "metadata_path": os.path.abspath(latest_metadata),
-            "flow_version": flow_version,
-            "n_estimators": n_estimators,
-            "max_depth": max_depth
+            "model_path": latest_model,
+            "metadata_path": latest_metadata
         }
 
-        with open(os.path.join(model_dir, "manifest.json"), "w") as f:
+        manifest_path = os.path.join(model_dir, "manifest.json")
+        with open(manifest_path, "w") as f:
             json.dump(manifest, f, indent=4)
 
-        print(f"✅ Model version saved as: {version_path}")
+        print(f"✅ Model version saved as: {version_dir}")
         print("✅ Manifest updated.")
-
     except Exception as e:
         logging.error(f"❌ Failed to version model: {e}")

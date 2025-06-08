@@ -15,16 +15,20 @@ def get_data_path(filename):
     project_root = Path(__file__).resolve().parents[1]
     return os.path.join(project_root, "Data", filename)
 
-# Resolve model path relative to the script's location
-current_dir = Path(__file__).resolve().parent
-project_root = current_dir.parent
-project_root = Path(__file__).resolve().parents[1]
-model_path = project_root / "Model" / "model_rf.joblib"
-json_path = project_root / "Model" / "model_metadata.json"
 
+# Resolve project root (2 levels above this script)
+base_dir = Path(__file__).resolve().parents[1]
+model_dir = base_dir / "Model" / "Current_Model"
+
+# Resolve paths
+model_path = model_dir / "model_rf.joblib"
+json_path = model_dir / "model_metadata.json"
+
+logging.info(f"🔍 Looking for model at: {model_path}")
+logging.info(f"🔍 Looking for metadata at: {json_path}")
 
 try:
-    model = joblib.load(model_path)
+    model = joblib.load(str(model_path))
     logging.info("✅ Model loaded successfully.")
 except FileNotFoundError:
     logging.error(f"❌ Model file not found at: {model_path}")

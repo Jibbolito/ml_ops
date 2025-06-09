@@ -13,8 +13,9 @@ from pathlib import Path
 
 
 def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    return os.path.join(base_dir, "Data", filename)
+    current_dir = os.path.dirname(os.path.abspath(__file__))  # Points to AB_Testing folder
+    project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))  # Go up two levels to project root
+    return os.path.join(project_root, "Data", filename)
 
 
 def save_model_metadata(model, X, y_true, y_pred, output_path):

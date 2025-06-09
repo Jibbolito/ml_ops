@@ -1,0 +1,5 @@
+{
+    "latest_version": "v_20250608_155536",
+    "model_path": "/app/Model/Current_Model/model_rf.joblib",
+    "metadata_path": "/app/Model/Current_Model/model_metadata.json"
+}

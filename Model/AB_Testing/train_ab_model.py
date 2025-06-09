@@ -7,10 +7,15 @@ from datetime import datetime, timezone
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+import shutil
+from pathlib import Path
+
+
 
 def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    return os.path.join(base_dir, "Data", filename)
+    current_dir = os.path.dirname(os.path.abspath(__file__))  # Points to AB_Testing folder
+    project_root = os.path.abspath(os.path.join(current_dir, "..", ".."))  # Go up two levels to project root
+    return os.path.join(project_root, "Data", filename)
 
 
 def save_model_metadata(model, X, y_true, y_pred, output_path):
@@ -21,11 +26,11 @@ def save_model_metadata(model, X, y_true, y_pred, output_path):
         "feature_names": list(X.columns),
         "n_samples": len(X),
         "accuracy": accuracy_score(y_true, y_pred),
-        "model_file": output_path
+        "model_file": str(output_path)
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    metadata_path = output_path.replace(".joblib", "_metadata.json")
+    metadata_path = str(output_path).replace(".joblib", "_metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
 
@@ -55,10 +60,28 @@ def train_ab_model(variant, n_estimators=100, max_depth=None):
     acc = accuracy_score(y_test, y_pred)
     print(f"✅ Accuracy: {acc:.2%}")
 
-    model_filename = f"Model/{variant}.joblib"
+    base_dir = Path(os.getcwd()).resolve()
+    ab_dir = base_dir / "Model" / "AB_Testing"
+    ab_dir.mkdir(parents=True, exist_ok=True)
+    model_filename = ab_dir / f"{variant}.joblib"
     joblib.dump(model, model_filename)
-    print(f"✅ Model saved to: {model_filename}")
+    print(f"✅ Model saved to absolute path: {model_filename.resolve()}")
     save_model_metadata(model, X_test, y_test, y_pred, model_filename)
+
+    # Versioning
+    version_root = base_dir / "Model" / "versions"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    version_dir = version_root / f"ab_{variant}_v_{timestamp}"
+    version_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy files into version folder
+    metadata_path = str(model_filename).replace(".joblib", "_metadata.json")
+    shutil.copy(model_filename, version_dir / f"{variant}.joblib")
+    shutil.copy(metadata_path, version_dir / f"{variant}_metadata.json")
+
+
+    print(f"📦 Versioned A/B model saved to: {version_dir}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train a model variant for A/B testing.")

@@ -6,53 +6,50 @@ from sklearn.metrics import accuracy_score
 from datetime import datetime
 import os
 import sys
+from pathlib import Path
 
+
+project_root = Path(__file__).resolve().parents[2]
+# Define folders relative to project root
+data_dir = project_root / "Data"
+model_dir = project_root / "Model" / "Current_Model"
+logs_dir = project_root / "logs"
+version_dir = model_dir / "versions"
 
 # Setup logging
-os.makedirs("logs", exist_ok=True)
+os.makedirs(logs_dir, exist_ok=True)
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_path = os.path.join("logs", f"ab_test_log_{timestamp}.txt")
+log_path = os.path.join(logs_dir, f"ab_test_log_{timestamp}.txt")
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s: %(message)s",
     handlers=[
         logging.FileHandler(log_path, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)  # Force stdout encoding support
+        logging.StreamHandler(sys.stdout)
     ]
 )
-
-def get_data_path(filename):
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    return os.path.join(base_dir, "Data", filename)
 
 def deterministic_split(df, id_column="Id"):
     hash_vals = df[id_column].astype(str).apply(lambda x: int(hashlib.md5(x.encode()).hexdigest(), 16))
     return df[hash_vals % 2 == 0], df[hash_vals % 2 == 1]
 
 def load_model_and_metadata(model_name):
-    model_path = f"Model/{model_name}.joblib"
-    meta_path = f"Model/{model_name}_metadata.json"
+    model_dir = project_root / "Model" / "AB_Testing"
+    model_path = model_dir / f"{model_name}.joblib"
+    meta_path = model_dir / f"{model_name}_metadata.json"
     model = joblib.load(model_path)
-    with open(meta_path) as f:
-        metadata = pd.read_json(f)
+    metadata = pd.read_json(meta_path)
     return model, metadata["feature_names"]
 
 def prepare_features(df, feature_names):
     df_encoded = pd.get_dummies(df, drop_first=True)
-
-    # Create a DataFrame with all missing columns in one go (avoids fragmentation)
     missing_cols = [col for col in feature_names if col not in df_encoded.columns]
     if missing_cols:
         filler_df = pd.DataFrame(0, index=df_encoded.index, columns=missing_cols)
         df_encoded = pd.concat([df_encoded, filler_df], axis=1)
-
-    # Reorder columns to match training features
     df_encoded = df_encoded[feature_names]
-
-    # Return a copy to defragment the internal blocks
     return df_encoded.copy()
-
 
 def evaluate(model_name, model, features, labels):
     predictions = model.predict(features)
@@ -63,8 +60,7 @@ def evaluate(model_name, model, features, labels):
 if __name__ == "__main__":
     logging.info("📊 Starting A/B test on unseen_segment.csv")
 
-    df = pd.read_csv(get_data_path("unseen_segment.csv"))
-
+    df = pd.read_csv(data_dir / "unseen_segment.csv")
     df_a, df_b = deterministic_split(df)
 
     model_a, features_a = load_model_and_metadata("model_a")
